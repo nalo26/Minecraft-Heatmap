@@ -12,13 +12,14 @@ if os.path.exists(".env.dev"):
     load_dotenv(".env.dev", override=True)
 
 
-def query_database(cursor, size: int, world_id: int):
+def query_database(cursor, size: int, world: str):
     coordinates = {}
     query = "SELECT x, z FROM actions WHERE action_id IN (1, 2, 3)"
-    query += " AND world_id = %d AND source = 5"
+    query += " AND source = 5 AND world_id ="
+    query += " (SELECT id FROM worlds WHERE identifier = 'minecraft:%s')"
     query += " AND x BETWEEN %d AND %d AND z BETWEEN %d AND %d"
 
-    cursor.execute(query % (world_id, -size, size, -size, size))
+    cursor.execute(query % (world, -size, size, -size, size))
     for row in cursor.fetchall():
         coordinates[row] = coordinates.get(row, 0) + 1
     print(f"Successfuly fetched {sum(coordinates.values())} lines.")
@@ -37,14 +38,16 @@ def get_palette(name: str):
 
 def generate_image(data: dict[tuple, int], size: int, name: str):
     colors = get_palette(name)
-    max_val = max(data.values())
+    big_values = sorted(data.values(), reverse=True)[:50]
+    max_val = sum(big_values) // len(big_values)
     image = Image.new("RGB", (size * 2, size * 2), colors[0])
 
-    for (x, z), count in tqdm(data.items()):
-        color = colors[int((len(colors) - 1) * count / max_val)]
+    for (x, z), value in tqdm(data.items()):
+        value = min(value, max_val)
+        color = colors[int((len(colors) - 1) * value / max_val)]
         image.putpixel((x + size - 1, z + size - 1), color)
 
-    image.save(f"results/heatmap_x{size}_{name}.png")
+    return image
 
 
 if __name__ == "__main__":
@@ -56,7 +59,14 @@ if __name__ == "__main__":
         default=2000,
         help="Map radius. /!\\ Generated image will be 2x this size.",
     )
-    parser.add_argument("-w", "--world_id", type=int, default=1, help="World ID.")
+    parser.add_argument(
+        "-w",
+        "--world",
+        type=str,
+        default="overworld",
+        choices=("overworld", "the_nether", "the_end"),
+        help="World ID.",
+    )
     parser.add_argument(
         "-c",
         "--color",
@@ -81,10 +91,11 @@ if __name__ == "__main__":
     cursor = connection.cursor()
 
     print("Querying database...")
-    data = query_database(cursor, args.size, args.world_id)
+    data = query_database(cursor, args.size, args.world)
 
     print("Generating image...")
-    generate_image(data, args.size, args.color)
+    image = generate_image(data, args.size, args.color)
+    image.save(f"results/heatmap_x{args.size}_{args.world}_{args.color}.png")
 
     cursor.close()
     connection.close()
