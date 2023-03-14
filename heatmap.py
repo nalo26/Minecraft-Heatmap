@@ -12,14 +12,31 @@ if os.path.exists(".env.dev"):
     load_dotenv(".env.dev", override=True)
 
 
-def query_database(cursor, size: int, world: str):
+def tuple_type(strings: str):
+    strings = strings.replace("(", "").replace(")", "")
+    int_tuple = tuple(map(int, strings.split(",")))
+    assert len(int_tuple) == 2, "Invalid tuple length."
+    return int_tuple
+
+
+def query_database(cursor, center: tuple[int], size: int, world: str):
     coordinates = {}
     query = "SELECT x, z FROM actions WHERE action_id IN (1, 2, 3)"
     query += " AND source = 5 AND world_id ="
     query += " (SELECT id FROM worlds WHERE identifier = 'minecraft:%s')"
     query += " AND x BETWEEN %d AND %d AND z BETWEEN %d AND %d"
 
-    cursor.execute(query % (world, -size, size, -size, size))
+    cursor.execute(
+        query
+        % (
+            world,
+            center[0] - size,
+            center[0] + size,
+            center[1] - size,
+            center[1] + size,
+        )
+    )
+
     for row in cursor.fetchall():
         coordinates[row] = coordinates.get(row, 0) + 1
     print(f"Successfuly fetched {sum(coordinates.values())} lines.")
@@ -36,7 +53,7 @@ def get_palette(name: str):
         return [image.getpixel((i, 0)) for i in range(image.width)]
 
 
-def generate_image(data: dict[tuple, int], size: int, name: str):
+def generate_image(data: dict[tuple, int], center: tuple[int], size: int, name: str):
     colors = get_palette(name)
     big_values = sorted(data.values(), reverse=True)[:50]
     max_val = sum(big_values) // len(big_values)
@@ -45,13 +62,25 @@ def generate_image(data: dict[tuple, int], size: int, name: str):
     for (x, z), value in tqdm(data.items()):
         value = min(value, max_val)
         color = colors[int((len(colors) - 1) * value / max_val)]
-        image.putpixel((x + size - 1, z + size - 1), color)
+        (of_x, of_z) = (x - center[0] + size - 1, z - center[1] + size - 1)
+        try:
+            image.putpixel((of_x, of_z), color)
+        except IndexError:
+            print(x, z, "->", of_x, of_z)
+            raise
 
     return image
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c",
+        "--center",
+        type=tuple_type,
+        default="0,0",
+        help="Coordinate of the center of the heatmap.",
+    )
     parser.add_argument(
         "-s",
         "--size",
@@ -87,11 +116,14 @@ if __name__ == "__main__":
     cursor = connection.cursor()
 
     print("Querying database...")
-    data = query_database(cursor, args.size, args.world)
+    data = query_database(cursor, args.center, args.size, args.world)
 
     print("Generating image...")
-    image = generate_image(data, args.size, args.palette)
-    image.save(f"results/heatmap_x{args.size}_{args.world}_{args.palette}.png")
+    image = generate_image(data, args.center, args.size, args.palette)
+    image.save(
+        f"results/heatmap_{','.join(str(n) for n in args.center)}"
+        f"_x{args.size}_{args.world}_{args.palette}.png"
+    )
 
     cursor.close()
     connection.close()
