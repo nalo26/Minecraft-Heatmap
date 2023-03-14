@@ -64,13 +64,9 @@ if __name__ == "__main__":
         "--world",
         type=str,
         default="overworld",
-        choices=("overworld", "the_nether", "the_end"),
-        help="World ID.",
+        help="The world to make the map from.",
     )
     parser.add_argument(
-        "-c",
-        "--color",
-        "--colors",
         "-p",
         "--palette",
         type=str,
@@ -94,8 +90,8 @@ if __name__ == "__main__":
     data = query_database(cursor, args.size, args.world)
 
     print("Generating image...")
-    image = generate_image(data, args.size, args.color)
-    image.save(f"results/heatmap_x{args.size}_{args.world}_{args.color}.png")
+    image = generate_image(data, args.size, args.palette)
+    image.save(f"results/heatmap_x{args.size}_{args.world}_{args.palette}.png")
 
     cursor.close()
     connection.close()
