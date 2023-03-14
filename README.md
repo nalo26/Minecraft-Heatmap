@@ -31,11 +31,11 @@ You can generate gradients image easily using a [website maker](https://angrytoo
 
 ## Result examples
 
-`python3 heatmap.py` (equivalent to `python3 heatmap.py -c 0,0 -s 2000 -w overworld -p rgb`)
-![overworld_rgb](results/heatmap_0,0_x2000_overworld_rgb.png)
+`python3 heatmap.py` (equivalent to `python3 heatmap.py -c 0,0 -s 2000 -w overworld -p rgb`)  
+<img src="results/heatmap_0,0_x2000_overworld_rgb.png">
 
-`python3 heatmap.py --center="-1460,430" -s 150`
-![custom_base](results/heatmap_-1460,430_x150_overworld_rgb.png)
+`python3 heatmap.py --center="-1460,430" -s 150`  
+<img src="results/heatmap_-1460,430_x150_overworld_rgb.png" width="300">
 
 `python3 heatmap.py -s 100 -w the_nether -p nether`  
-![the_nether_nether](results/heatmap_0,0_x100_the_nether_nether.png)
+<img src="results/heatmap_0,0_x100_the_nether_nether.png" widht="300">
