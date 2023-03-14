@@ -1,4 +1,4 @@
-# Minecraft-Heatmap
+# Minecraft Heatmap Generator
 Create a heatmap of your server based on block interaction (block breaking and placing).
 
 It uses the logs of the [Ledger mods](https://github.com/QuiltServerTools/Ledger), and the MySQL configuration of the [Ledger Database](https://github.com/QuiltServerTools/Ledger-Databases) mod extension.

@@ -63,11 +63,7 @@ def generate_image(data: dict[tuple, int], center: tuple[int], size: int, name: 
         value = min(value, max_val)
         color = colors[int((len(colors) - 1) * value / max_val)]
         (of_x, of_z) = (x - center[0] + size - 1, z - center[1] + size - 1)
-        try:
-            image.putpixel((of_x, of_z), color)
-        except IndexError:
-            print(x, z, "->", of_x, of_z)
-            raise
+        image.putpixel((of_x, of_z), color)
 
     return image
 
